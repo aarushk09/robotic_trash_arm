@@ -1,0 +1,74 @@
+#include <Servo.h>
+
+Servo s1, s2, s3, s4, s5;
+
+int p1, p2, p3, p4, p5;
+
+void setIdle() {
+  p1 = 0;   p2 = 70;  p3 = 140; p4 = 30;
+  s1.write(p1); s2.write(p2); s3.write(p3); s4.write(p4);
+}
+
+void setPickup() {
+  p1 = 25;  p2 = 20;  p3 = 120; p4 = 100;
+  s1.write(p1); s2.write(p2); s3.write(p3); s4.write(p4);
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  s1.attach(3);
+  s2.attach(4);
+  s3.attach(5);
+  s4.attach(6);
+  s5.attach(2);   // 5th servo
+
+  setIdle();
+  s5.write(0);
+
+  Serial.println("Ready");
+}
+
+void loop() {
+  if (!Serial.available()) return;
+
+  String line = Serial.readStringUntil('\n');
+  line.trim();
+  if (line != "BEGIN") return;
+
+  String mode = "";
+  int angle = -1;
+
+  while (true) {
+    line = Serial.readStringUntil('\n');
+    line.trim();
+
+    if (line.startsWith("MODE:")) {
+      mode = line.substring(5);
+    }
+
+    if (line.startsWith("ANGLE:")) {
+      angle = line.substring(6).toInt();
+      angle = constrain(angle, 0, 180);
+    }
+
+    if (line.startsWith("AREA")) {
+      Serial.println(line);
+    }
+
+    if (line == "END") break;
+  }
+
+  if (mode == "TEST" && angle >= 0) {
+    s5.write(angle);
+    delay(2000);
+
+    setIdle();
+    delay(2000);
+
+    setPickup();
+    delay(2000);
+
+    setIdle();
+  }
+}
